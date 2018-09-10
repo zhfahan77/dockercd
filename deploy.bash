@@ -23,6 +23,7 @@ help='''
     -u   <username of remote host>\n
     -g   </path/to/git repo to clone>\n
     -b   <git branch name>\n
+    -s   <git sub-module (y/n)>\n
 '''
 
 # check if the optiosn provided count is zero
@@ -33,7 +34,7 @@ if [ $# -eq 0 ]; then
 fi
 
 # case based options and setting them to variables to do something later
-while getopts ":k:d:h:u:g:b:" opt; do
+while getopts ":k:d:h:u:g:b:s:" opt; do
   let optnum++
   case $opt in
     k)
@@ -50,6 +51,9 @@ while getopts ":k:d:h:u:g:b:" opt; do
       ;;
     g)
       gitc=$OPTARG
+      ;;
+    s)
+      sub=$OPTARG
       ;;
     b)
       branch=$OPTARG
@@ -68,7 +72,7 @@ while getopts ":k:d:h:u:g:b:" opt; do
 done
 
 # check if all the required options are given or not
-if [[ $optnum -lt 6 ]];then
+if [[ $optnum -lt 7 ]];then
   echo -e "All the options must be specified correctly";
   echo -e "$help";
   exit 1
@@ -85,6 +89,8 @@ echo "
       Host : $host
       Username : $user
       Repo : $gitc
+      Branch : $branch
+      Sub Module : $sub
      "
 
 echo "
@@ -93,6 +99,8 @@ echo "
       Host : $host
       Username : $user
       Repo : $gitc
+      Branch : $branch
+      Sub Module : $sub
      " >> $INFO_LOG 2>&1
 
 # remote script that executes and deploy code
@@ -121,7 +129,12 @@ mkdir -p $TMP_DIR
 
 echo -e "Cloning git repo ... "
 echo -e "Cloning git repo ... " >> $INFO_LOG 2>&1
-git clone -b "$branch" --single-branch "$gitc" "$TMP_DIR" >> $INFO_LOG 2>&1
+
+if [ "$sub" == "y" ];then
+  git clone -b "$branch" --recurse-submodules --single-branch "$gitc" "$TMP_DIR" >> $INFO_LOG 2>&1
+else
+  git clone -b "$branch" --single-branch "$gitc" "$TMP_DIR" >> $INFO_LOG 2>&1
+fi
 
 if [ $? -ne 0 ];then
   echo -e "Something went wrong while cloning repo, please see $INFO_LOG file for more details\n";
