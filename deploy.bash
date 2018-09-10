@@ -17,7 +17,7 @@ rm -rf $TMP_DIR
 # A help message to display if options are not provided properly
 help='''
   USAGE:\n
-    -k   </path/to/aws key file on local machine>\n
+    -k   </path/to/aws key file on local machine or pass 'n' to provide no key>\n
     -d   </path/to/remote destination dir>\n
     -h   <remote hostname or IP>\n
     -u   <username of remote host>\n
@@ -117,8 +117,13 @@ function remoteExec()
 
     echo "Remote execution starting, Deploying into Docker ... "
     echo "Remote execution starting, Deploying into Docker ... " >> $INFO_LOG 2>&1
-    ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
     
+    if [ "$1" == 'n' ];then
+      ssh -q "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
+    else 
+      ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
+    fi
+
     if [ $? -eq 0 ];then 
       echo -e "Bringing up Docker successfully completed ... "
       echo -e "Bringing up Docker successfully completed ... " >> $INFO_LOG 2>&1
@@ -148,8 +153,14 @@ echo -e "Cloning git repo successfully completed ... " >> $INFO_LOG 2>&1
 echo -e "Copying files to remote host"
 echo -e "Copying files to remote host" >> $INFO_LOG
 
-ssh -q -i "$key" "$user"@"$host" "mkdir -p $dest";
-scp -i "$key" -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
+if [ $key == 'n' ];then
+  ssh -q "$user"@"$host" "mkdir -p $dest";
+  scp -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
+else
+  ssh -q -i "$key" "$user"@"$host" "mkdir -p $dest";
+  scp -i "$key" -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
+fi
+
 
 if [ $? -ne 0 ];then
   echo -e "Something went wrong while copying files to remote host, please see $INFO_LOG file for more details\n";
