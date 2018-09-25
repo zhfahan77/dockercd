@@ -109,9 +109,7 @@ function remoteExec()
     function Remote_Script()
     {
         cd $1
-        echo -e "Bringing down Docker ... "
-        docker-compose down -v
-        echo -e "Bringing up Docker ... "
+        echo -e "Deploying Application to Docker ... "
         docker-compose up --build -d
     }
 
@@ -119,9 +117,9 @@ function remoteExec()
     echo "Remote execution starting, Deploying into Docker ... " >> $INFO_LOG 2>&1
     
     if [ "$1" == 'n' ];then
-      ssh -q "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
+      ssh -q "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4" >> $INFO_LOG 2>&1
     else 
-      ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
+      ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4" >> $INFO_LOG 2>&1
     fi
 
     if [ $? -eq 0 ];then 
