@@ -24,9 +24,11 @@ help='''
     -g   </path/to/git repo to clone>\n
     -b   <git branch name>\n
     -s   <git sub-module (y/n)>\n
+    --pre-copy=   <optional pre copy shell script path with commands in it, 
+                  should be in .sh or .bash format>\n
 '''
 
-# check if the optiosn provided count is zero
+# check if the options provided count is zero
 if [ $# -eq 0 ]; then
     echo -e "No options provided\n"
     echo -e "$help";
@@ -34,42 +36,54 @@ if [ $# -eq 0 ]; then
 fi
 
 # case based options and setting them to variables to do something later
-while getopts ":k:d:h:u:g:b:s:" opt; do
+while [[ $# -gt 0 ]]; do
+    opt="$1"
   let optnum++
-  case $opt in
-    k)
-      key=$OPTARG
+  case "$opt" in
+    -k)
+      shift
+      key="$1"
       ;;
-    d)
-      dest=$OPTARG
+    -d)
+      shift
+      dest="$1"
       ;;
-    h)
-      host=$OPTARG
+    -h)
+      shift
+      host="$1"
       ;;
-    u)
-      user=$OPTARG
+    -u)
+      shift
+      user="$1"
       ;;
-    g)
-      gitc=$OPTARG
+    -g)
+      shift
+      gitc="$1"
       ;;
-    s)
-      sub=$OPTARG
+    -s)
+      shift
+      sub="$1"
       ;;
-    b)
-      branch=$OPTARG
+    -b)
+      shift
+      branch="$1"
       ;;
-    \?)
-      echo -e "Invalid option: -$OPTARG\n"
-      echo -e "$help"
-      exit 1
+    --pre-copy=*)
+      precopy=${opt#*=}
+      if [ -z $precopy ];then
+        true
+      fi
       ;;
-    :)
-      echo -e "Option -$OPTARG requires an argument.\n"
+    *)
+      echo -e "Invalid option: -$opt\n"
       echo -e "$help"
       exit 1
       ;;
   esac
+  shift
 done
+
+
 
 # check if all the required options are given or not
 if [[ $optnum -lt 7 ]];then
@@ -91,6 +105,7 @@ echo "
       Repo : $gitc
       Branch : $branch
       Sub Module : $sub
+      Pre-Copy : $precopy
      "
 
 echo "
@@ -101,6 +116,7 @@ echo "
       Repo : $gitc
       Branch : $branch
       Sub Module : $sub
+      Pre-Copy : $precopy
      " >> $INFO_LOG 2>&1
 
 # remote script that executes and deploy code
@@ -152,9 +168,11 @@ echo -e "Copying files to remote host"
 echo -e "Copying files to remote host" >> $INFO_LOG
 
 if [ $key == 'n' ];then
+  $precopy
   ssh -q "$user"@"$host" "mkdir -p $dest";
   scp -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
 else
+  $precopy
   ssh -q -i "$key" "$user"@"$host" "mkdir -p $dest";
   scp -i "$key" -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
 fi

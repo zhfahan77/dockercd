@@ -19,3 +19,6 @@ USAGE:
     -b   <git branch name>
 
     -s   <git sub-module (y/n)>
+
+    --pre-copy=   <optional pre copy shell script path with commands in it, 
+                  should be in .sh or .bash format>\n
