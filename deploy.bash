@@ -26,6 +26,7 @@ help='''
     -s   <git sub-module (y/n)>\n
     --pre-copy=   <optional pre copy shell script path with commands in it, 
                   should be in .sh or .bash format>\n
+    --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
 '''
 
 # check if the options provided count is zero
@@ -74,6 +75,12 @@ while [[ $# -gt 0 ]]; do
         true
       fi
       ;;
+    --rollback=*)
+      rollback_head=${opt#*=}
+      if [ -z $rollback_head ];then
+        true
+      fi
+      ;;
     *)
       echo -e "Invalid option: -$opt\n"
       echo -e "$help"
@@ -106,6 +113,7 @@ echo "
       Branch : $branch
       Sub Module : $sub
       Pre-Copy : $precopy
+      Rollback : $rollback_head
      "
 
 echo "
@@ -117,6 +125,7 @@ echo "
       Branch : $branch
       Sub Module : $sub
       Pre-Copy : $precopy
+      Rollback : $rollback_head
      " >> $INFO_LOG 2>&1
 
 # remote script that executes and deploy code
@@ -133,14 +142,9 @@ function remoteExec()
     echo "Remote execution starting, Deploying into Docker ... " >> $INFO_LOG 2>&1
     
     if [ "$1" == 'n' ];then
-      ssh -q "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4" >> $INFO_LOG 2>&1
+      Remote_Script "$4" >> $INFO_LOG 2>&1
     else 
       ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4" >> $INFO_LOG 2>&1
-    fi
-
-    if [ $? -eq 0 ];then 
-      echo -e "Bringing up Docker successfully completed ... "
-      echo -e "Bringing up Docker successfully completed ... " >> $INFO_LOG 2>&1
     fi
 }
 
@@ -164,13 +168,24 @@ fi
 echo -e "Cloning git repo successfully completed ... "
 echo -e "Cloning git repo successfully completed ... " >> $INFO_LOG 2>&1
 
+# Rolling Back
+if [ -z $rollback_head ];then
+  true
+else
+  cd "$TMP_DIR"
+  git checkout "$rollback_head" >> $INFO_LOG 2>&1
+  echo -e "Rolling Back";
+  echo -e "Checking out git head $rollback_head";
+  echo -e "Checking out git head $rollback_head\n" >> $INFO_LOG 2>&1
+fi
+
 echo -e "Copying files to remote host"
 echo -e "Copying files to remote host" >> $INFO_LOG
 
 if [ $key == 'n' ];then
   $precopy
-  ssh -q "$user"@"$host" "mkdir -p $dest";
-  scp -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
+  mkdir -p "$dest";
+  cp -R "$TMP_DIR"* "$dest" >> $INFO_LOG 2>&1
 else
   $precopy
   ssh -q -i "$key" "$user"@"$host" "mkdir -p $dest";
@@ -196,6 +211,9 @@ if [ $? -ne 0 ];then
   echo -e "Something went wrong while deploying code to remote host\n"; >> $INFO_LOG 2>&1
   rm -rf $TMP_DIR
   exit 1
+else
+  echo -e "Bringing up Docker successfully completed ... "
+  echo -e "Bringing up Docker successfully completed ... " >> $INFO_LOG 2>&1
 fi
 
 # Remove temporary clone dir

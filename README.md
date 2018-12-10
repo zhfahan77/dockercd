@@ -1,6 +1,6 @@
 # GIT + Docker CD
 
-Script to pull application repo from Git and copy it to remote host and run it as a docker.
+Script to pull application repo from Git and copy it to remote host and run it as a docker. With Rollback Feature.
 
 N.B. Need the repo to be dockerized.
 
@@ -22,3 +22,5 @@ USAGE:
 
     --pre-copy=   <optional pre copy shell script path with commands in it, 
                   should be in .sh or .bash format>\n
+
+    --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
