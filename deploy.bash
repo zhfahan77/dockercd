@@ -29,6 +29,12 @@ help='''
     --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
 '''
 
+# Log Function
+function log() {
+  echo -e $1
+  echo -e $1 >> $INFO_LOG 2>&1
+}
+
 # check if the options provided count is zero
 if [ $# -eq 0 ]; then
     echo -e "No options provided\n"
@@ -90,8 +96,6 @@ while [[ $# -gt 0 ]]; do
   shift
 done
 
-
-
 # check if all the required options are given or not
 if [[ $optnum -lt 7 ]];then
   echo -e "All the options must be specified correctly";
@@ -100,33 +104,18 @@ if [[ $optnum -lt 7 ]];then
 fi
 
 # Print timestamp to .info file
-echo -e "\n##### `date` #####\n"
-echo -e "\n##### `date` #####\n" >> $INFO_LOG 2>&1
+log "\n##### `date` #####\n"
 
 # displaying options provided and thei values
-echo "
-      Key : $key
-      Destination : $dest
-      Host : $host
-      Username : $user
-      Repo : $gitc
-      Branch : $branch
-      Sub Module : $sub
-      Pre-Copy : $precopy
-      Rollback : $rollback_head
-     "
-
-echo "
-      Key : $key
-      Destination : $dest
-      Host : $host
-      Username : $user
-      Repo : $gitc
-      Branch : $branch
-      Sub Module : $sub
-      Pre-Copy : $precopy
-      Rollback : $rollback_head
-     " >> $INFO_LOG 2>&1
+log "Key : $key \n
+     Destination : $dest \n
+     Host : $host \n
+     Username : $user \n
+     Repo : $gitc \n
+     Branch : $branch \n
+     Sub Module : $sub \n
+     Pre-Copy : $precopy \n
+     Rollback : $rollback_head"
 
 # remote script that executes and deploy code
 function remoteExec()
@@ -138,8 +127,7 @@ function remoteExec()
         docker-compose up --build -d
     }
 
-    echo "Remote execution starting, Deploying into Docker ... "
-    echo "Remote execution starting, Deploying into Docker ... " >> $INFO_LOG 2>&1
+    log "Remote execution starting, Deploying into Docker ... "
     
     if [ "$1" == 'n' ];then
       Remote_Script "$4" >> $INFO_LOG 2>&1
@@ -150,8 +138,7 @@ function remoteExec()
 
 mkdir -p $TMP_DIR
 
-echo -e "Cloning git repo ... "
-echo -e "Cloning git repo ... " >> $INFO_LOG 2>&1
+log "Cloning git repo ... "
 
 if [ "$sub" == "y" ];then
   git clone -b "$branch" --recurse-submodules --single-branch "$gitc" "$TMP_DIR" >> $INFO_LOG 2>&1
@@ -160,27 +147,23 @@ else
 fi
 
 if [ $? -ne 0 ];then
-  echo -e "Something went wrong while cloning repo, please see $INFO_LOG file for more details\n";
-  echo -e "Something went wrong while cloning repo, please see $INFO_LOG file for more details\n"; >> $INFO_LOG 2>&1
+  log "Something went wrong while cloning repo, please see $INFO_LOG file for more details\n";
   rm -rf $TMP_DIR
   exit 1
 fi
-echo -e "Cloning git repo successfully completed ... "
-echo -e "Cloning git repo successfully completed ... " >> $INFO_LOG 2>&1
+
+log "Cloning git repo successfully completed ... "
 
 # Rolling Back
 if [ -z $rollback_head ];then
   true
 else
   cd "$TMP_DIR"
-  git checkout "$rollback_head" >> $INFO_LOG 2>&1
-  echo -e "Rolling Back";
-  echo -e "Checking out git head $rollback_head";
-  echo -e "Checking out git head $rollback_head\n" >> $INFO_LOG 2>&1
+  git checkout "$rollback_head" > /dev/null 2>&1
+  log "Rolling Back, checking out git head $rollback_head\n"
 fi
 
-echo -e "Copying files to remote host"
-echo -e "Copying files to remote host" >> $INFO_LOG
+log "Copying files to remote host"
 
 if [ $key == 'n' ];then
   $precopy
@@ -192,28 +175,23 @@ else
   scp -i "$key" -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
 fi
 
-
 if [ $? -ne 0 ];then
-  echo -e "Something went wrong while copying files to remote host, please see $INFO_LOG file for more details\n";
-  echo -e "Something went wrong while copying files to remote host, please see $INFO_LOG file for more details\n"; >> $INFO_LOG 2>&1
+  log "Something went wrong while copying files to remote host, please see $INFO_LOG file for more details\n"
   rm -rf $TMP_DIR
   exit 1
 fi
-echo -e "Copying files to remote host successfully completed"
-echo -e "Copying files to remote host successfully completed" >> $INFO_LOG 2>&1
 
-echo -e "Deploying code ... "
-echo -e "Deploying code ... " >> $INFO_LOG 2>&1
+log "Copying files to remote host successfully completed"
+
+log "Deploying code ... "
 remoteExec "$key" "$user" "$host" "$dest" "$branch"
 
 if [ $? -ne 0 ];then
-  echo -e "Something went wrong while deploying code to remote host\n";
-  echo -e "Something went wrong while deploying code to remote host\n"; >> $INFO_LOG 2>&1
+  log "Something went wrong while deploying code to remote host\n"
   rm -rf $TMP_DIR
   exit 1
 else
-  echo -e "Bringing up Docker successfully completed ... "
-  echo -e "Bringing up Docker successfully completed ... " >> $INFO_LOG 2>&1
+  log "Bringing up Docker successfully completed ... "
 fi
 
 # Remove temporary clone dir
