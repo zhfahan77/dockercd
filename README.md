@@ -27,3 +27,5 @@ USAGE:
               should be in .sh or .bash format>
 
     --rollback=   <optional rollback param, accepts only git head hash of a branch>
+
+    --start=      <optional custom command to to start application>

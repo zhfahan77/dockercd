@@ -29,6 +29,8 @@ help='''
     --post-copy=   <optional post copy shell script path with commands in it, 
                   should be in .sh or .bash format>\n
     --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
+
+    --start=      <optional custom command to to start application>\n
 '''
 
 # Log Function
@@ -95,6 +97,12 @@ while [[ $# -gt 0 ]]; do
         true
       fi
       ;;
+    --start=*)
+      customCommand=${opt#*=}
+      if [ -z "$customCommand" ];then
+        true
+      fi
+      ;;
     *)
       echo -e "Invalid option: -$opt\n"
       echo -e "$help"
@@ -124,7 +132,8 @@ log "Key : $key \n
      Sub Module : $sub \n
      Pre-Copy : $precopy \n
      Post-Copy : $postcopy \n
-     Rollback : $rollback_head"
+     Rollback : $rollback_head \n
+     Custom Command: $customCommand \n"
 
 # remote script that executes and deploy code
 function remoteExec()
@@ -140,8 +149,28 @@ function remoteExec()
     
     if [ "$1" == 'n' ];then
       Remote_Script "$4" >> $INFO_LOG 2>&1
-    else 
+    else
       ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4" >> $INFO_LOG 2>&1
+    fi
+}
+
+# remote script that executes custom command and deploy code
+function remoteExecWithCustomCommand()
+{
+    function Remote_Script()
+    {
+        cd $1
+        echo -e "Deploying Application to Docker ... "
+        shift
+        $@
+    }
+
+    log "Remote execution starting, Deploying into Docker ... "
+
+    if [ "$1" == 'n' ];then
+      Remote_Script "$4" "$5" >> $INFO_LOG 2>&1
+    else
+      ssh -q -i "$1" "$2"@"$3" "$(declare -f Remote_Script);Remote_Script $4 $5" >> $INFO_LOG 2>&1
     fi
 }
 
@@ -193,15 +222,21 @@ fi
 log "Copying files to remote host successfully completed"
 
 if [ $key == 'n' ];then
+  log "Running Post Copy Script"
   $postcopy
 else
+  log "Running Post Copy Script"
   ssh -q -i "$key" "$user"@"$host" 'bash -s' < $postcopy
 fi
 
-log "Running Post Copy Script"
-
 log "Deploying code ... "
-remoteExec "$key" "$user" "$host" "$dest" "$branch"
+
+# Custom Command
+if [ -z "$customCommand" ];then
+  remoteExec "$key" "$user" "$host" "$dest"
+else
+  remoteExecWithCustomCommand "$key" "$user" "$host" "$dest" "$customCommand"
+fi
 
 if [ $? -ne 0 ];then
   log "Something went wrong while deploying code to remote host\n"
