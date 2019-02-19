@@ -21,6 +21,9 @@ USAGE:
     -s   <git sub-module (y/n)>
 
     --pre-copy=   <optional pre copy shell script path with commands in it, 
-                  should be in .sh or .bash format>\n
+                  should be in .sh or .bash format>
+                  
+    --post-copy=   <optional post copy shell script path with commands in it, 
+              should be in .sh or .bash format>
 
-    --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
+    --rollback=   <optional rollback param, accepts only git head hash of a branch>
