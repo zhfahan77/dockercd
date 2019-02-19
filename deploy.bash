@@ -26,6 +26,8 @@ help='''
     -s   <git sub-module (y/n)>\n
     --pre-copy=   <optional pre copy shell script path with commands in it, 
                   should be in .sh or .bash format>\n
+    --post-copy=   <optional post copy shell script path with commands in it, 
+                  should be in .sh or .bash format>\n
     --rollback=   <optional rollback param, accepts only git head hash of a branch>\n
 '''
 
@@ -81,6 +83,12 @@ while [[ $# -gt 0 ]]; do
         true
       fi
       ;;
+    --post-copy=*)
+      postcopy=${opt#*=}
+      if [ -z $postcopy ];then
+        true
+      fi
+      ;;
     --rollback=*)
       rollback_head=${opt#*=}
       if [ -z $rollback_head ];then
@@ -115,6 +123,7 @@ log "Key : $key \n
      Branch : $branch \n
      Sub Module : $sub \n
      Pre-Copy : $precopy \n
+     Post-Copy : $postcopy \n
      Rollback : $rollback_head"
 
 # remote script that executes and deploy code
@@ -182,6 +191,14 @@ if [ $? -ne 0 ];then
 fi
 
 log "Copying files to remote host successfully completed"
+
+if [ $key == 'n' ];then
+  $postcopy
+else
+  ssh -q -i "$key" "$user"@"$host" 'bash -s' < $postcopy
+fi
+
+log "Running Post Copy Script"
 
 log "Deploying code ... "
 remoteExec "$key" "$user" "$host" "$dest" "$branch"
