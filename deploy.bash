@@ -224,6 +224,8 @@ log "Copying files to remote host successfully completed"
 if [ $key == 'n' ];then
   log "Running Post Copy Script"
   $postcopy
+elif [ -z $postcopy ];then
+  true
 else
   log "Running Post Copy Script"
   ssh -q -i "$key" "$user"@"$host" 'bash -s' < $postcopy
