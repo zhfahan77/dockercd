@@ -3,7 +3,7 @@
 #######################################################################
 #
 # This script helps to pull source code from a repo and deploy
-# docker application into a host having password less authentication
+# docker application into any host
 #
 #######################################################################
 
