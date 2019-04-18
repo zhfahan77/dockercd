@@ -11,9 +11,6 @@
 TMP_DIR="/tmp/git-tmp/"
 INFO_LOG="log.info"
 
-# Remove temporary repo DIR
-rm -rf $TMP_DIR
-
 # A help message to display if options are not provided properly
 help='''
   USAGE:\n
@@ -174,7 +171,25 @@ function remoteExecWithCustomCommand()
     fi
 }
 
+# function to generate random string
+function generate_random_string() {
+  head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13 ; echo ''
+}
+
+# base setup starts
+RANDOM_STRING=$(generate_random_string)
+TMP_DIR="$TMP_DIR$RANDOM_STRING"
+
+# Remove temporary repo DIR
+rm -rf $TMP_DIR
+
 mkdir -p $TMP_DIR
+
+export DEPLOY_TMP_DIR="$TMP_DIR"
+
+# base setup ends
+
+log "Repo is cloned into local DIR. This location path is generated randomly. You can have this path on DEPLOY_TMP_DIR variable\n"
 
 log "Cloning git repo ... "
 
