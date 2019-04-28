@@ -222,11 +222,11 @@ log "Copying files to remote host"
 if [ $key == 'n' ];then
   $precopy
   mkdir -p "$dest";
-  cp -R "$TMP_DIR"* "$dest" >> $INFO_LOG 2>&1
+  cp -R "$TMP_DIR/"* "$dest" >> $INFO_LOG 2>&1
 else
   $precopy
   ssh -q -i "$key" "$user"@"$host" "mkdir -p $dest";
-  scp -i "$key" -r "$TMP_DIR"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
+  scp -i "$key" -r "$TMP_DIR/"* "$user"@"$host":"$dest" >> $INFO_LOG 2>&1
 fi
 
 if [ $? -ne 0 ];then
@@ -251,9 +251,9 @@ log "Deploying code ... "
 
 # Custom Command
 if [ -z "$customCommand" ];then
-  remoteExec "$key" "$user" "$host" "$dest/$RANDOM_STRING"
+  remoteExec "$key" "$user" "$host" "$dest"
 else
-  remoteExecWithCustomCommand "$key" "$user" "$host" "$dest/$RANDOM_STRING" "$customCommand"
+  remoteExecWithCustomCommand "$key" "$user" "$host" "$dest" "$customCommand"
 fi
 
 if [ $? -ne 0 ];then
