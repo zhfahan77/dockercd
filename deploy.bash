@@ -177,7 +177,8 @@ function generate_random_string() {
 }
 
 # base setup starts
-RANDOM_STRING=$(generate_random_string)
+RANDOM_STRING_GENERATE=$(generate_random_string)
+RANDOM_STRING=$RANDOM_STRING_GENERATE
 TMP_DIR="$TMP_DIR$RANDOM_STRING"
 
 # Remove temporary repo DIR
@@ -250,9 +251,9 @@ log "Deploying code ... "
 
 # Custom Command
 if [ -z "$customCommand" ];then
-  remoteExec "$key" "$user" "$host" "$dest"
+  remoteExec "$key" "$user" "$host" "$dest/$RANDOM_STRING"
 else
-  remoteExecWithCustomCommand "$key" "$user" "$host" "$dest" "$customCommand"
+  remoteExecWithCustomCommand "$key" "$user" "$host" "$dest/$RANDOM_STRING" "$customCommand"
 fi
 
 if [ $? -ne 0 ];then
