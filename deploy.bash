@@ -173,7 +173,7 @@ function remoteExecWithCustomCommand()
 
 # function to generate random string
 function generate_random_string() {
-  head /dev/urandom | tr -dc A-Za-z0-9 | head -c 13 ; echo ''
+  base64 < /dev/urandom | tr -dc A-Za-z0-9 | head -c 13 ; echo ''
 }
 
 # base setup starts
